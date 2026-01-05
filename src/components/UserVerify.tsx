@@ -2,14 +2,14 @@
 /* eslint-disable */
 
 import { addUser } from "@/redux/userSlice";
-import {  setCartCount } from "@/redux/cartSlice";
+
 import axios from "axios";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 
-const PUBLIC_ROUTES = ["/", "/auth/login", "/auth/register","/learn","/term","/avoidscam","/privacy","/legal"];
+const PUBLIC_ROUTES = ["/", "/auth/login", "/auth/register","/info","/productlisiting","/avoidscam","/privacy","/legal"];
 
 export default function VerifyUser() {
   const dispatch = useDispatch();
@@ -81,12 +81,12 @@ export default function VerifyUser() {
             })
           );
 
-          // Redirect based on role
-          // if (data.role === "admin") {
-          //   if (!path.startsWith("/admin")) router.push("/admin/dashboard");
-          // } else if (data.role === "user") {
-          //   if (!path.startsWith("/user")) router.push("/user/dashboard");
-          // }
+         
+          if (data.role === "admin") {
+            if (!path.startsWith("/admin")) router.push("/admin/dashboard");
+          } else if (data.role === "user") {
+            if (!path.startsWith("/")) router.push("/");
+          }
 
           return;
         }
