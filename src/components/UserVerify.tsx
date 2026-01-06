@@ -2,66 +2,37 @@
 /* eslint-disable */
 
 import { addUser } from "@/redux/userSlice";
-
 import axios from "axios";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 
-const PUBLIC_ROUTES = ["/", "/auth/login", "/auth/register","/info","/productlisiting","/avoidscam","/privacy","/legal"];
-
 export default function VerifyUser() {
   const dispatch = useDispatch();
   const userData = useSelector((state: any) => state.user);
-  const [isLoading, setIsLoading] = useState(false);
-  
+  const [isLoading, setIsLoading] = useState(true);
+
   const path = usePathname();
   const router = useRouter();
 
-
-
-
-
   useEffect(() => {
     const verify = async () => {
-      setIsLoading(true);
       axios.defaults.withCredentials = true;
 
-      // CASE 1: USER ALREADY IN REDUX
+      // ✅ USER EXISTS IN REDUX
       if (userData?.id) {
-        // Logged-in users should not stay on public pages
-        // if (PUBLIC_ROUTES.includes(path)) {
-        //   router.push(
-        //     userData.role === "admin"
-        //       ? "/admin/dashboard"
-        //       : "/user/dashboard"
-        //   );
-        //   setIsLoading(false);
-        //   return;
-        // }
-
-        // Check unauthorized access
-        // if (path.startsWith("/admin") && userData.role !== "admin") {
-        //   toast.error("Unauthorized Access!");
-        //   router.push("/user/dashboard");
-        //   setIsLoading(false);
-        //   return;
-        // }
-
-        // if (path.startsWith("/user") && userData.role !== "user") {
-        //   toast.error("Unauthorized Access!");
-        //   router.push("/admin/dashboard");
-        //   setIsLoading(false);
-        //   return;
-        // }
-
+        if (path.startsWith("/admin") && userData.role !== "admin") {
+          toast.error("Unauthorized Access!");
+          router.replace("/");
+        }
         setIsLoading(false);
         return;
       }
 
-      // CASE 2: USER NOT IN REDUX
+      // ❌ USER NOT IN REDUX → VERIFY FROM BACKEND
       try {
+        axios.defaults.withCredentials=true
         const res = await axios.get(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/auth/verify`
         );
@@ -75,33 +46,33 @@ export default function VerifyUser() {
               fullName: data.fullName,
               email: data.email,
               role: data.role,
-              phone:data.phone,
-              gender:data.gender,
-              dob:data.dob,
+              phone: data.phone,
+              gender: data.gender,
+              dob: data.dob,
             })
           );
 
-         
-          if (data.role === "admin") {
-            if (!path.startsWith("/admin")) router.push("/admin/dashboard");
-          } else if (data.role === "user") {
-            if (!path.startsWith("/")) router.push("/");
+          if (path.startsWith("/admin") && data.role !== "admin") {
+            toast.error("Unauthorized Access!");
+            router.replace("/");
           }
 
+          setIsLoading(false);
           return;
         }
       } catch (error) {
-        // ❌ Not logged in → allow only public routes
-        // if (!PUBLIC_ROUTES.includes(path)) {
-        //   router.push("/auth/login");
-        // }
+        // 🚫 NOT LOGGED IN → BLOCK ADMIN
+        if (path.startsWith("/admin")) {
+          toast.error("Please login as admin");
+          router.replace("/auth/login");
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     verify();
-  }, [path, userData, dispatch, router]);
+  }, [path, userData?.id]);
 
   if (isLoading) return null;
   return null;

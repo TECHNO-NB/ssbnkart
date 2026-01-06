@@ -26,6 +26,7 @@ import { Elements } from "@stripe/react-stripe-js";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 /* ================= STRIPE LOADER ================= */
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY!);
@@ -38,6 +39,7 @@ export default function CheckoutPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [address, setAddress] = useState<any>(null);
   const [cartItem, setCartItem] = useState<any[]>([]);
+  const router=useRouter();
   
   const userData = useSelector((state: any) => state.user);
 
@@ -60,7 +62,11 @@ export default function CheckoutPage() {
   /* ===== FETCH ADDRESS ===== */
   const fetchAddress = async () => {
     try {
-      if (!userData?.id) return;
+      if (!userData?.id) {
+        toast.error("You are not login!")
+        router.push("/auth/login")
+        return;
+      };
       const res = await axios.get(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/address/one/${userData.id}`
       );
@@ -74,6 +80,9 @@ export default function CheckoutPage() {
     if (userData?.id) {
       fetchCart();
       fetchAddress();
+    }else{
+      toast.error("You are not login!")
+      router.push("/auth/login")
     }
   }, [userData?.id]);
 

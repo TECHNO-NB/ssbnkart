@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/dialog";
 import { AddressDialog } from "@/components/AddAddressModal";
 import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -43,6 +44,7 @@ export default function ProfilePage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const userData = useSelector((state: any) => state.user);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const router=useRouter();
 
   async function fetchData() {
     try {
@@ -60,6 +62,11 @@ export default function ProfilePage() {
   }
 
   useEffect(() => {
+    if(!userData?.id){
+      toast.error("You are not login!")
+      router.push("/auth/login")
+      return;
+    }
     fetchData();
   }, [userData.id]);
 

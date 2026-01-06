@@ -22,6 +22,7 @@ import { Progress } from "@/components/ui/progress";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import { removeItem } from "@/redux/cartSlice";
+import toast from "react-hot-toast";
 
 const FREE_SHIPPING_THRESHOLD = 10000;
 const TAX_RATE = 0.18;
@@ -88,7 +89,12 @@ export default function CartPage() {
       }
     }
 
-    if (userData?.id) fetchCart();
+    if (userData?.id){
+      fetchCart()
+    }else{
+        toast.error("You are not login!")
+        router.push("/auth/login")
+    }
   }, [userData?.id]);
 
   // ---------------- CALCULATIONS ----------------

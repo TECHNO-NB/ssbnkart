@@ -122,6 +122,12 @@ export default function ProductPage() {
 
   // Inside your ProductPage component
   const handleAddToCart = async () => {
+    if (!userData?.id) {
+      toast.error("You are not login!");
+      router.push("/auth/login");
+      return;
+    }
+
     if (!selectedVariant) return;
 
     try {
@@ -145,16 +151,21 @@ export default function ProductPage() {
     }
   };
 
-  const addToWishlist = async (productId:string) => {
+  const addToWishlist = async (productId: string) => {
+    if (!userData?.id) {
+      toast.error("You are not login!");
+      router.push("/auth/login");
+      return;
+    }
     try {
       const addWishlist = await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/wishlist/${userData.id}`,
-        {productId}
+        { productId }
       );
-      
+
       if (addWishlist.data.data.added) {
         toast.success("successfully added to wishlist");
-      }else{
+      } else {
         toast.success("successfully removed from wishlist");
       }
     } catch (error) {
@@ -328,8 +339,8 @@ export default function ProductPage() {
               variant="outline"
               size="icon"
               onClick={() => {
-                addToWishlist(product.id)
-                setWishlisted(!wishlisted)
+                addToWishlist(product.id);
+                setWishlisted(!wishlisted);
               }}
             >
               <Heart

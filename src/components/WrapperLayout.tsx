@@ -7,20 +7,16 @@ import Navbar from "./Navbar";
 import { usePathname } from "next/navigation";
 import { Footer } from "./Footer";
 
-
-
 export const WrapperLayout = ({ children }: { children: React.ReactNode }) => {
-  const path=usePathname()
-  
-  
+  const path = usePathname();
+
   return (
     <div>
       <Provider store={store}>
         <VerifyUser />
-      {!path.startsWith("/admin") && (<Navbar/>) }
+        {!path.startsWith("/admin") && <Navbar />}
         {children}
-        {!path.startsWith("/admin") && <Footer/> }
-        
+        {!path.startsWith("/admin") && <Footer />}
       </Provider>
     </div>
   );
