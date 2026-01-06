@@ -22,7 +22,7 @@ export default function VerifyUser() {
 
       // ✅ USER EXISTS IN REDUX
       if (userData?.id) {
-        if (path.startsWith("/admin") && userData.role !== "admin") {
+        if (path.startsWith("/admin") && userData.role !== "ADMIN") {
           toast.error("Unauthorized Access!");
           router.replace("/");
         }
@@ -52,7 +52,7 @@ export default function VerifyUser() {
             })
           );
 
-          if (path.startsWith("/admin") && data.role !== "admin") {
+          if (path.startsWith("/admin") && data.role !== "ADMIN") {
             toast.error("Unauthorized Access!");
             router.replace("/");
           }
