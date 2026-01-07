@@ -84,7 +84,7 @@ export function HeroSlider() {
   // --- Loading Skeleton ---
   if (loading) {
     return (
-      <section className="max-w-screen h-[50vh] md:h-[60vh] relative bg-gray-200">
+      <section className="w-full h-[50vh] md:h-[60vh] relative bg-gray-200">
         <Skeleton className="w-full h-full absolute inset-0" />
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 z-10">
            <Skeleton className="h-4 w-32 bg-white/20 mb-2" />
@@ -98,10 +98,10 @@ export function HeroSlider() {
 
   // --- Render Slider ---
   return (
-    <section className="max-w-screen h-[50vh] md:h-[60vh] relative group overflow-hidden">
+    <section className="w-screen h-[50vh] md:h-[60vh] relative group overflow-hidden">
       <Carousel
         plugins={[plugin.current]}
-        className="w-full h-full"
+        className="max-w-full h-full"
         onMouseEnter={plugin.current.stop}
         onMouseLeave={plugin.current.reset}
         opts={{ loop: true }}
