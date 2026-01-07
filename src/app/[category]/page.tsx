@@ -29,6 +29,7 @@ export default function CategorySearchPage() {
           category: category.toLowerCase(), 
         };
 
+         axios.defaults.withCredentials=true
         const res = await axios.get(API_URL, { params: apiParams });
         
         if (res.data && res.data.success) {

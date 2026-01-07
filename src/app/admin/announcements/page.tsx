@@ -42,6 +42,7 @@ export default function AnnouncementsPage() {
   // --- Fetch Data ---
   const fetchAnnouncements = async () => {
     try {
+      axios.defaults.withCredentials=true
       setLoading(true)
       const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/admin/announcements`)
       setAnnouncements(res.data)
@@ -79,10 +80,12 @@ export default function AnnouncementsPage() {
     try {
       if (selectedItem) {
         // Update
+        axios.defaults.withCredentials=true
         await axios.put(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/admin/announcements/${selectedItem.id}`, formData)
         toast.success("Announcement updated")
       } else {
         // Create
+        axios.defaults.withCredentials=true
         await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/admin/announcements`, formData)
         toast.success("Announcement created")
       }
@@ -99,6 +102,7 @@ export default function AnnouncementsPage() {
     if (!confirm("Are you sure you want to delete this?")) return
     
     try {
+      axios.defaults.withCredentials=true
       await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/admin/announcements/${id}`)
       toast.success("Deleted successfully")
       fetchAnnouncements()

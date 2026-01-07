@@ -137,7 +137,7 @@ function SuccessContent() {
               </Button>
             </Link>
             
-            <Link href="/account/orders" className="flex-1">
+            <Link href="/account" className="flex-1">
               <Button className="w-full h-12 bg-gray-900 hover:bg-black text-white gap-2 text-base rounded-xl shadow-lg hover:shadow-xl transition-all">
                 View Order <ArrowRight className="w-4 h-4" />
               </Button>

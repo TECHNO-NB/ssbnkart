@@ -55,6 +55,7 @@ export default function CartPage() {
   useEffect(() => {
     async function fetchCart() {
       try {
+        axios.defaults.withCredentials=true
         const res = await axios.get(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/cart/${userData.id}`
         );
@@ -121,10 +122,12 @@ export default function CartPage() {
     // Call backend only if quantity changes
     try {
       if (change === 1 && item.quantity < item.stock) {
+        axios.defaults.withCredentials=true
         await axios.put(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/cart/increment/${id}`
         );
       } else if (change === -1 && item.quantity > 1) {
+        axios.defaults.withCredentials=true
         await axios.put(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/cart/decrement/${id}`
         );
@@ -147,6 +150,7 @@ export default function CartPage() {
 
   const removeItemCart = async (id: string) => {
     try {
+      axios.defaults.withCredentials=true
       await axios.delete(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/users/removecartItem/${id}`
       );

@@ -70,6 +70,28 @@ export default function ProfilePage() {
     fetchData();
   }, [userData.id]);
 
+  const deleteAddress = async (id: string) => {
+    try {
+      axios.defaults.withCredentials = true;
+      const res = await axios.delete(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/address/${id}`,
+        {
+          data: {
+            userId: userData?.id,
+          },
+        }
+      );
+
+      if (res.data) {
+        fetchData();
+        toast.success("Successfully deleted");
+      }
+    } catch (error) {
+      toast.error("Error");
+      console.log("error");
+    }
+  };
+
   const logout = async () => {
     axios.defaults.withCredentials = true;
     const response = await axios.post(
@@ -147,7 +169,7 @@ export default function ProfilePage() {
                 </TabsTrigger>
               ))}
               <Button
-              onClick={logout}
+                onClick={logout}
                 variant="ghost"
                 className="w-full justify-start gap-3 px-4 py-3 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 mt-2"
               >
@@ -279,7 +301,10 @@ export default function ProfilePage() {
                             Edit
                           </button>
                           <span className="text-gray-300">|</span>
-                          <button className="text-sm text-gray-500 hover:text-red-600">
+                          <button
+                            onClick={() => deleteAddress(addr.id)}
+                            className="text-sm text-gray-500 hover:text-red-600"
+                          >
                             Delete
                           </button>
                         </div>

@@ -258,8 +258,8 @@ function ContactFormStep({ step, setStep, address, refreshAddress }: any) {
         toast.error("Please fill in all required fields.");
         return;
       }
-
-      await axios.post(
+      axios.defaults.withCredentials=true;
+     await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/address/${userData?.id}`,
         {
           addressId,
@@ -323,6 +323,10 @@ function ContactFormStep({ step, setStep, address, refreshAddress }: any) {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Country</Label>
+              <Input value={country} onChange={(e) => setState(e.target.value)} />
+            </div>
             <div className="space-y-2">
               <Label>State</Label>
               <Input value={state} onChange={(e) => setState(e.target.value)} />
