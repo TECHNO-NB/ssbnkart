@@ -122,7 +122,7 @@ export default function EmailMarketingPage() {
                 <Send className="mr-2 h-4 w-4" /> New Campaign
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[800px] h-[85vh] flex flex-col">
+            <DialogContent className="sm:max-w-200 h-[85vh] flex flex-col">
               <DialogHeader>
                 <DialogTitle>Compose Email</DialogTitle>
                 <DialogDescription>
@@ -177,7 +177,7 @@ export default function EmailMarketingPage() {
                     <div className="space-y-2 flex-1 flex flex-col h-full">
                         <Label>Message Body</Label>
                         <Textarea 
-                            className="min-h-[300px] font-mono text-sm leading-relaxed p-4 resize-none" 
+                            className="min-h-75 font-mono text-sm leading-relaxed p-4 resize-none" 
                             placeholder="Type your email content here..."
                             value={emailForm.body}
                             onChange={(e) => setEmailForm({...emailForm, body: e.target.value})}

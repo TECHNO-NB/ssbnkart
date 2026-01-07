@@ -44,7 +44,7 @@ export default function ProfilePage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const userData = useSelector((state: any) => state.user);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-  const router=useRouter();
+  const router = useRouter();
 
   async function fetchData() {
     try {
@@ -62,13 +62,25 @@ export default function ProfilePage() {
   }
 
   useEffect(() => {
-    if(!userData?.id){
-      toast.error("You are not login!")
-      router.push("/auth/login")
+    if (!userData?.id) {
+      toast.error("You are not login!");
+      router.push("/auth/login");
       return;
     }
     fetchData();
   }, [userData.id]);
+
+  const logout = async () => {
+    axios.defaults.withCredentials = true;
+    const response = await axios.post(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/auth/logout`
+    );
+
+    if (response.data) {
+      toast.success("Logout Success");
+      router.push("/auth/login");
+    }
+  };
 
   if (!userProfile) return <p className="text-center mt-10">Loading...</p>;
 
@@ -135,6 +147,7 @@ export default function ProfilePage() {
                 </TabsTrigger>
               ))}
               <Button
+              onClick={logout}
                 variant="ghost"
                 className="w-full justify-start gap-3 px-4 py-3 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 mt-2"
               >

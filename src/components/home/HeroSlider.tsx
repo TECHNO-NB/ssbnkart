@@ -84,7 +84,7 @@ export function HeroSlider() {
   // --- Loading Skeleton ---
   if (loading) {
     return (
-      <section className="w-full h-[50vh] md:h-[60vh] relative bg-gray-200">
+      <section className="max-w-screen h-[50vh] md:h-[60vh] relative bg-gray-200">
         <Skeleton className="w-full h-full absolute inset-0" />
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 z-10">
            <Skeleton className="h-4 w-32 bg-white/20 mb-2" />

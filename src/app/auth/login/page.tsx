@@ -54,7 +54,8 @@ export default function LoginPage() {
 
       if (response.data.success) {
         toast.success("Welcome back!");
-    
+
+
         if(response.data.data.role==="ADMIN"){
           router.push("/admin")
         }

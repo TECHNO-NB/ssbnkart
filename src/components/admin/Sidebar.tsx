@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -27,6 +27,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 const sidebarGroups = [
   {
@@ -77,6 +79,20 @@ const sidebarGroups = [
 ];
 
 export function AdminSidebar() {
+
+  const router=useRouter()
+
+    const logout = async () => {
+    axios.defaults.withCredentials = true;
+    const response = await axios.post(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/auth/logout`
+    );
+
+    if (response.data) {
+      toast.success("Logout Success");
+      router.push("/auth/login");
+    }
+  };
   const pathname = usePathname();
 
   return (
@@ -147,14 +163,15 @@ export function AdminSidebar() {
             </Avatar>
             <div className="grid gap-0.5">
               <span className="text-sm font-semibold text-slate-900">
-                Admin User
+                Admin 
               </span>
-              <span className="text-xs text-slate-500">admin@luxe.com</span>
+              <span className="text-xs text-slate-500">admin@ssbnkart.com</span>
             </div>
           </div>
         </div>
 
         <Button
+        onClick={logout}
           variant="outline"
           className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 border-red-100"
         >
