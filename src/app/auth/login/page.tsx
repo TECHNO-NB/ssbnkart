@@ -54,15 +54,11 @@ export default function LoginPage() {
 
       if (response.data.success) {
         toast.success("Welcome back!");
-<<<<<<< HEAD
-
 
         if(response.data.data.role==="ADMIN"){
           router.push("/admin")
         }
-=======
     
->>>>>>> parent of e8f33fa (fixed bug)
         router.push("/");
       }
     } catch (error: any) {
