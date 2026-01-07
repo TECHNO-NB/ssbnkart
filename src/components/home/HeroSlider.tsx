@@ -98,7 +98,7 @@ export function HeroSlider() {
 
   // --- Render Slider ---
   return (
-    <section className="w-full h-[50vh] md:h-[60vh] relative group overflow-hidden">
+    <section className="max-w-screen h-[50vh] md:h-[60vh] relative group overflow-hidden">
       <Carousel
         plugins={[plugin.current]}
         className="w-full h-full"
