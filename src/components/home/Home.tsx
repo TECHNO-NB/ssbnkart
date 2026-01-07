@@ -17,7 +17,7 @@ import { FeaturedBanner2 } from "./FeaturedBanner2";
 export default function Landing() {
   const router = useRouter();
   return (
-    <main className="bg-[#faf9f6] min-h-screen">
+    <main className="bg-[#faf9f6] min-h-screen max-w-screen">
       {/* 1. Modern Image Slider (First Section as requested) */}
       <HeroSlider />
 
