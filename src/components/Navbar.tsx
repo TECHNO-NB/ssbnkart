@@ -135,8 +135,8 @@ const NAV_LINKS = [
       // },
     ],
   },
-  { id: "collection", label: "Collection", href: "/productlisiting", featured: false },
-   { id: "service", label: "Service", href: "/service", featured: false },
+  { id: "collection", label: "Collection", href: "/productlisting", featured: false },
+   { id: "service", label: "Service", href: "/productlisting", featured: false },
   // { id: "home&living", label: "Home & Living", href: "/home&living", featured: false },
   { id: "sale", label: "Sale", href: "/productlisting", featured: false },
 ];
