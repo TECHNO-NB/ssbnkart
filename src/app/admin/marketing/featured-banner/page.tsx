@@ -48,6 +48,7 @@ export default function BannerManager() {
   // 1. Fetch Banners
   const fetchBanners = async () => {
     try {
+      
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/admin/featuredbanners`);
       const data = await res.json();
       setBanners(data);
@@ -98,6 +99,7 @@ export default function BannerManager() {
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/admin/featuredbanners`, {
         method: "POST",
+        credentials:"include",
         // IMPORTANT: Do NOT set Content-Type header manually. 
         // The browser sets it to 'multipart/form-data; boundary=...' automatically.
         body: data, 
@@ -125,7 +127,7 @@ export default function BannerManager() {
     if (!confirm("Are you sure you want to delete this banner?")) return;
     
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/admin/featuredbanners/${id}`, { method: "DELETE" });
+      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/admin/featuredbanners/${id}`, { method: "DELETE",credentials:"include" });
       setBanners(banners.filter((b) => b.id !== id));
     } catch (error) {
       console.error("Failed to delete");

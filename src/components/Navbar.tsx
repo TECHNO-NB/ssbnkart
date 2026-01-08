@@ -39,7 +39,7 @@ const NAV_LINKS = [
     columns: [
       {
         title: "All in New Arrivals",
-        items: [{ label: "New Collection", href: "/products/woman/new" }],
+        items: [{ label: "New Collection", href: "/products/woman" }],
       },
       {
         title: "Clothing",
@@ -138,7 +138,7 @@ const NAV_LINKS = [
   { id: "collection", label: "Collection", href: "/productlisiting", featured: false },
    { id: "service", label: "Service", href: "/service", featured: false },
   // { id: "home&living", label: "Home & Living", href: "/home&living", featured: false },
-  { id: "sale", label: "Sale", href: "/sale", featured: false },
+  { id: "sale", label: "Sale", href: "/productlisting", featured: false },
 ];
 
 // --- 2. SUB-COMPONENTS ---
