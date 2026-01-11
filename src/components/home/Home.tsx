@@ -13,9 +13,20 @@ import { useRouter } from "next/navigation";
 import { DicountedProducts } from "./DiscountedProduct";
 import { FeaturesProducts } from "./FeaturedProducts";
 import { FeaturedBanner2 } from "./FeaturedBanner2";
+import { convertUSDToLocal } from "@/lib/getCountry";
+import { useEffect } from "react";
 
-export default function Landing() {
+export default  function Landing() {
   const router = useRouter();
+
+
+  useEffect(()=>{
+const fetch=async()=>{
+
+  console.log("++++++++++++++++",await convertUSDToLocal(20))
+}
+fetch()
+  },[])
   return (
     <main className="bg-[#faf9f6] min-h-screen max-w-screen">
       {/* 1. Modern Image Slider (First Section as requested) */}

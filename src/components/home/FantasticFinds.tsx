@@ -8,12 +8,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import axios from "axios";
 import Link from "next/link";
 
-// Updated Interface matching the Controller response
+// 1. Redux Imports
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
+
+// Updated Interface
 interface FindItem {
   id: string;
-  title: string;       // Custom label (e.g. "Summer Pick")
+  title: string;       // e.g. "Summer Pick"
   productName: string; // Actual Product Name
-  subtitle: string;    // Formatted Price
+  subtitle: string;    // Formatted Price string (e.g. "$50.00")
+  price?: number;      // RAW NUMBER needed for math (e.g. 50). Ensure API sends this!
   image: string;
   link: string;
 }
@@ -22,6 +27,21 @@ export function FantasticFinds() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [finds, setFinds] = useState<FindItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // 2. Get Currency Data from Redux
+  const { data: currencyData } = useSelector((state: RootState) => state.currency);
+  
+  // 3. Define Rate & Code Logic
+  const rate = currencyData?.rates || 1;
+  const currencyCode = currencyData?.currencyCode || "USD";
+
+  // Helper: Format Number
+  const formatMoney = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  };
 
   // --- Fetch Data ---
   useEffect(() => {
@@ -113,53 +133,68 @@ export function FantasticFinds() {
                      </div>
                    ))
                  ) : (
-                   finds.map((item, idx) => (
-                    <motion.div
-                      key={item.id}
-                      initial={{ opacity: 0, y: 30 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: idx * 0.1 }}
-                      className="min-w-70 sm:min-w-[320px] snap-center group cursor-pointer"
-                    >
-                       <Link href={`/products/${item.link}`}>
-                         {/* Image Card */}
-                         <div className="relative aspect-3/4 rounded-2xl overflow-hidden mb-4 shadow-sm bg-white">
-                           <img 
-                             src={item.image} 
-                             alt={item.productName} 
-                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                           />
-                           
-                           {/* Overlay */}
-                           <div className="absolute inset-0 bg-linear-to-t from-black/50 via-transparent to-transparent opacity-60" />
+                   finds.map((item, idx) => {
+                     
+                     // 4. Calculate Price Logic inside the map
+                     // Prefer 'item.price' (number). If missing, try to parse 'item.subtitle' (string)
+                     const basePrice = item.price 
+                        ? Number(item.price) 
+                        : Number(item.subtitle.replace(/[^0-9.-]+/g,"")) || 0;
+                     
+                     const finalPrice = basePrice * rate;
+                     
+                     return (
+                       <motion.div
+                         key={item.id}
+                         initial={{ opacity: 0, y: 30 }}
+                         whileInView={{ opacity: 1, y: 0 }}
+                         viewport={{ once: true }}
+                         transition={{ delay: idx * 0.1 }}
+                         className="min-w-70 sm:min-w-[320px] snap-center group cursor-pointer"
+                       >
+                          <Link href={`/products/${item.link}`}>
+                            {/* Image Card */}
+                            <div className="relative aspect-3/4 rounded-2xl overflow-hidden mb-4 shadow-sm bg-white">
+                              <img 
+                                src={item.image} 
+                                alt={item.productName} 
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                              />
+                              
+                              {/* Overlay */}
+                              <div className="absolute inset-0 bg-linear-to-t from-black/50 via-transparent to-transparent opacity-60" />
 
-                           {/* Hover Button */}
-                           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/10 backdrop-blur-[2px]">
-                              <div className="bg-white text-[#581c1c] rounded-full px-6 py-3 font-medium flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 shadow-xl">
-                                 Shop Now <ArrowRight className="w-4 h-4" />
+                              {/* Hover Button */}
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/10 backdrop-blur-[2px]">
+                                <div className="bg-white text-[#581c1c] rounded-full px-6 py-3 font-medium flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 shadow-xl">
+                                   Shop Now <ArrowRight className="w-4 h-4" />
+                                </div>
                               </div>
-                           </div>
-                           
-                           {/* Price Tag */}
-                           <div className="absolute top-4 right-4">
-                              <div className="bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-[#581c1c] shadow-sm">
-                                 {item.subtitle}
+                              
+                              {/* Price Tag (DYNAMIC) */}
+                              <div className="absolute top-4 right-4">
+                                <div className="bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-[#581c1c] shadow-sm">
+                                   {/* If we have a valid price, show converted. Else fallback to subtitle string */}
+                                   {basePrice > 0 
+                                      ? `${currencyCode} ${formatMoney(finalPrice)}`
+                                      : item.subtitle
+                                   }
+                                </div>
                               </div>
-                           </div>
-                         </div>
+                            </div>
 
-                         {/* Content Below */}
-                         <div className="text-center">
-                           <h3 className="text-xl font-serif text-[#581c1c] group-hover:text-[#a68a64] transition-colors">
-                              {item.title}
-                           </h3>
-                           <p className="text-sm text-gray-500 mt-1 line-clamp-1">{item.productName}</p>
-                           <div className="h-0.5 w-0 bg-[#a68a64] mx-auto mt-2 transition-all duration-300 group-hover:w-12" />
-                         </div>
-                       </Link>
-                    </motion.div>
-                   ))
+                            {/* Content Below */}
+                            <div className="text-center">
+                              <h3 className="text-xl font-serif text-[#581c1c] group-hover:text-[#a68a64] transition-colors">
+                                 {item.title}
+                              </h3>
+                              <p className="text-sm text-gray-500 mt-1 line-clamp-1">{item.productName}</p>
+                              <div className="h-0.5 w-0 bg-[#a68a64] mx-auto mt-2 transition-all duration-300 group-hover:w-12" />
+                            </div>
+                          </Link>
+                       </motion.div>
+                     );
+                   })
                  )}
                  
                  {/* "See All" Card */}

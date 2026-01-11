@@ -18,8 +18,6 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 
-// Note: Elements provider is kept if you want to use other Stripe features later, 
-// but for Hosted Checkout (Sessions), it's not strictly necessary to wrap everything.
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 
@@ -39,9 +37,25 @@ export default function CheckoutPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [address, setAddress] = useState<any>(null);
   const [cartItem, setCartItem] = useState<any[]>([]);
-  const router=useRouter();
+  const router = useRouter();
   
+  // 1. Redux Selectors
   const userData = useSelector((state: any) => state.user);
+  const { data: currencyData } = useSelector((state: any) => state.currency);
+
+  // 2. Define Rate & Code Logic
+  const rate = currencyData?.rates || 1;
+  const currencyCode = currencyData?.currencyCode || "USD";
+
+  // 3. Helper: Format Price (Visual Only)
+  // Converts base price to display price. Does NOT affect logic/API.
+  const formatPrice = (amount: number) => {
+    const converted = amount * rate;
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(converted);
+  };
 
   /* ===== FETCH CART ===== */
   const fetchCart = async () => {
@@ -80,20 +94,21 @@ export default function CheckoutPage() {
     if (userData?.id) {
       fetchCart();
       fetchAddress();
-    }else{
+    } else {
       toast.error("You are not login!")
       router.push("/auth/login")
     }
   }, [userData?.id]);
 
-  /* ===== PRICE CALCULATION ===== */
+  /* ===== PRICE CALCULATION (BASE CURRENCY) ===== */
+  // These calculations remain in USD (Base) for the API
   const subtotal = cartItem.reduce((sum, item) => {
     const base = Number(item.product.price);
     const diff = Number(item.productVariant?.priceDiff || 0);
     return sum + (base + diff) * item.quantity;
   }, 0);
 
-  const shipping = subtotal > 100 ? 0 : 20;
+  const shipping = subtotal > 100 ? 0 : 20; // Logic uses USD threshold
   const tax = subtotal * 0.18;
   const total = subtotal + shipping + tax;
 
@@ -107,11 +122,12 @@ export default function CheckoutPage() {
 
     setIsProcessing(true);
     try {
+      // NOTE: Sending 'total' (USD) to backend, not converted price
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/checkout/cod/${userData.id}`,
         {
           addressId: address.id,
-          totalAmount: total,
+          totalAmount: total, // Sending Base Currency
         }
       );
 
@@ -138,12 +154,11 @@ export default function CheckoutPage() {
 
     setIsProcessing(true);
     try {
-      // Call your backend controller to create session
+      // NOTE: Backend handles amount based on DB or passed params (in USD)
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/checkout/create-stripe-session`,
         {
-            userId: userData.id, // Optional if handled by middleware
-            // You can pass addressId here if you want to link it in metadata
+            userId: userData.id,
         }
       );
 
@@ -189,7 +204,9 @@ export default function CheckoutPage() {
             <DeliveryStep 
                 step={step} 
                 setStep={setStep} 
-                shippingCost={shipping} 
+                shippingCost={shipping}
+                formatPrice={formatPrice}
+                currencyCode={currencyCode} 
             />
             <PaymentStep
               step={step}
@@ -199,6 +216,8 @@ export default function CheckoutPage() {
               isProcessing={isProcessing}
               onPlaceCodOrder={handleCodOrder}
               onStripeRedirect={handleStripeRedirect}
+              formatPrice={formatPrice}
+              currencyCode={currencyCode}
             />
           </div>
 
@@ -211,6 +230,8 @@ export default function CheckoutPage() {
                 shipping={shipping}
                 tax={tax}
                 total={total}
+                formatPrice={formatPrice}
+                currencyCode={currencyCode}
               />
             </div>
           </div>
@@ -301,7 +322,6 @@ function ContactFormStep({ step, setStep, address, refreshAddress }: any) {
 
       {step === 1 && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-          {/* Form Fields (Simplified for brevity, same as before) */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Email</Label>
@@ -325,17 +345,17 @@ function ContactFormStep({ step, setStep, address, refreshAddress }: any) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Country</Label>
-              <Input value={country} onChange={(e) => setState(e.target.value)} />
+              <Input value={country} onChange={(e) => setCountry(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label>State</Label>
               <Input value={state} onChange={(e) => setState(e.target.value)} />
             </div>
-            <div className="space-y-2">
+          </div>
+           <div className="space-y-2">
               <Label>Street</Label>
               <Input value={street} onChange={(e) => setStreet(e.target.value)} />
             </div>
-          </div>
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Zip Code</Label>
@@ -357,7 +377,7 @@ function ContactFormStep({ step, setStep, address, refreshAddress }: any) {
 }
 
 /* ================= DELIVERY ================= */
-function DeliveryStep({ step, setStep, shippingCost }: any) {
+function DeliveryStep({ step, setStep, shippingCost, formatPrice, currencyCode }: any) {
   return (
     <div className={`bg-white p-6 rounded-xl border shadow-sm transition-opacity duration-300 ${step !== 2 && "opacity-60 grayscale pointer-events-none"}`}>
       <div className="flex justify-between items-center mb-4">
@@ -379,7 +399,8 @@ function DeliveryStep({ step, setStep, shippingCost }: any) {
                 <Label htmlFor="standard" className="cursor-pointer font-medium">Standard Delivery</Label>
               </div>
               <span className="font-medium text-[#581c1c]">
-                {shippingCost === 0 ? "Free" : `$${shippingCost.toFixed(2)}`}
+                {/* DYNAMIC SHIPPING PRICE */}
+                {shippingCost === 0 ? "Free" : `${currencyCode} ${formatPrice(shippingCost)}`}
               </span>
             </div>
           </RadioGroup>
@@ -400,7 +421,9 @@ function PaymentStep({
   total,
   isProcessing,
   onPlaceCodOrder,
-  onStripeRedirect
+  onStripeRedirect,
+  formatPrice,
+  currencyCode
 }: any) {
 
   return (
@@ -452,7 +475,8 @@ function PaymentStep({
                   disabled={isProcessing}
                   className="bg-[#581c1c] hover:bg-[#4a1717] w-full text-white h-12 text-lg shadow-lg hover:shadow-xl transition-all"
                 >
-                  {isProcessing ? "Processing..." : `Proceed to Pay $${total.toFixed(2)}`}
+                  {/* DYNAMIC TOTAL BUTTON */}
+                  {isProcessing ? "Processing..." : `Proceed to Pay ${currencyCode} ${formatPrice(total)}`}
                 </Button>
               </div>
             ) : (
@@ -466,7 +490,8 @@ function PaymentStep({
                   disabled={isProcessing}
                   className="bg-[#581c1c] hover:bg-[#4a1717] w-full text-white h-12 text-lg"
                 >
-                  {isProcessing ? "Placing Order..." : `Place Order ($${total.toFixed(2)})`}
+                  {/* DYNAMIC TOTAL BUTTON */}
+                  {isProcessing ? "Placing Order..." : `Place Order (${currencyCode} ${formatPrice(total)})`}
                 </Button>
               </div>
             )}
@@ -483,39 +508,45 @@ function PaymentStep({
 }
 
 /* ================= ORDER SUMMARY ================= */
-function OrderSummary({ cartItem, subtotal, shipping, tax, total }: any) {
+function OrderSummary({ cartItem, subtotal, shipping, tax, total, formatPrice, currencyCode }: any) {
   return (
     <div className="bg-white p-6 rounded-xl border shadow-sm">
       <h3 className="font-serif text-xl mb-6 text-[#581c1c]">Order Summary</h3>
 
       <div className="max-h-[300px] overflow-y-auto pr-2 space-y-4 mb-6 scrollbar-thin scrollbar-thumb-gray-200">
-        {cartItem.map((item: any) => (
-          <div key={item.id} className="flex gap-4">
-            <div className="relative w-16 h-20 bg-gray-100 rounded overflow-hidden flex-shrink-0">
-              <img
-                src={item.product.images?.[0] || "/placeholder.png"}
-                className="w-full h-full object-cover"
-                alt={item.product.name}
-              />
-              <span className="absolute top-0 right-0 bg-gray-500 text-white text-[10px] px-1.5 py-0.5 rounded-bl">
-                x{item.quantity}
-              </span>
+        {cartItem.map((item: any) => {
+           // Calculate item total in base price then format
+           const itemBaseTotal = (Number(item.product.price) + Number(item.productVariant?.priceDiff || 0)) * item.quantity;
+           
+           return (
+            <div key={item.id} className="flex gap-4">
+              <div className="relative w-16 h-20 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                <img
+                  src={item.product.images?.[0] || "/placeholder.png"}
+                  className="w-full h-full object-cover"
+                  alt={item.product.name}
+                />
+                <span className="absolute top-0 right-0 bg-gray-500 text-white text-[10px] px-1.5 py-0.5 rounded-bl">
+                  x{item.quantity}
+                </span>
+              </div>
+              <div className="flex-1 flex flex-col justify-center">
+                <p className="text-sm font-medium text-gray-900 line-clamp-2">{item.product.name}</p>
+                {item.productVariant && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {item.productVariant.size} {item.productVariant.color !== 'Default' ? `/ ${item.productVariant.color}` : ''}
+                    </p>
+                )}
+              </div>
+              <div className="flex flex-col justify-center text-right">
+                <p className="text-sm font-medium text-gray-900">
+                  {/* DYNAMIC ITEM TOTAL */}
+                  {currencyCode} {formatPrice(itemBaseTotal)}
+                </p>
+              </div>
             </div>
-            <div className="flex-1 flex flex-col justify-center">
-              <p className="text-sm font-medium text-gray-900 line-clamp-2">{item.product.name}</p>
-              {item.productVariant && (
-                 <p className="text-xs text-gray-500 mt-1">
-                   {item.productVariant.size} {item.productVariant.color !== 'Default' ? `/ ${item.productVariant.color}` : ''}
-                 </p>
-              )}
-            </div>
-            <div className="flex flex-col justify-center text-right">
-              <p className="text-sm font-medium text-gray-900">
-                ${((Number(item.product.price) + Number(item.productVariant?.priceDiff || 0)) * item.quantity).toFixed(2)}
-              </p>
-            </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       <Separator />
@@ -523,22 +554,26 @@ function OrderSummary({ cartItem, subtotal, shipping, tax, total }: any) {
       <div className="mt-6 space-y-3 text-sm text-gray-600">
         <div className="flex justify-between">
           <span>Subtotal</span>
-          <span className="font-medium text-gray-900">${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+          {/* DYNAMIC SUBTOTAL */}
+          <span className="font-medium text-gray-900">{currencyCode} {formatPrice(subtotal)}</span>
         </div>
         <div className="flex justify-between">
           <span>Shipping</span>
           <span className={shipping === 0 ? "text-green-600 font-medium" : "font-medium text-gray-900"}>
-            {shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}
+            {/* DYNAMIC SHIPPING */}
+            {shipping === 0 ? "Free" : `${currencyCode} ${formatPrice(shipping)}`}
           </span>
         </div>
         <div className="flex justify-between">
           <span>Tax (18% GST)</span>
-          <span className="font-medium text-gray-900">${tax.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+          {/* DYNAMIC TAX */}
+          <span className="font-medium text-gray-900">{currencyCode} {formatPrice(tax)}</span>
         </div>
         <Separator className="my-2" />
         <div className="flex justify-between items-center pt-2">
           <span className="font-serif text-lg text-[#581c1c] font-bold">Total</span>
-          <span className="font-serif text-xl text-[#581c1c] font-bold">${total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+          {/* DYNAMIC TOTAL */}
+          <span className="font-serif text-xl text-[#581c1c] font-bold">{currencyCode} {formatPrice(total)}</span>
         </div>
       </div>
     </div>

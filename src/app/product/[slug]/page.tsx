@@ -67,8 +67,25 @@ export default function ProductPage() {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [wishlisted, setWishlisted] = useState(false);
+  
+  // 1. Redux Selectors
   const userData = useSelector((state: any) => state.user);
+  const { data: currencyData } = useSelector((state: any) => state.currency);
   const dispatch = useDispatch();
+
+  // 2. Define Rate & Code Logic
+  const rate = currencyData?.rates || 1;
+  const currencyCode = currencyData?.currencyCode || "USD";
+
+  // 3. Helper: Format Price (Visual Only)
+  // This takes a BASE price, converts it, and formats it.
+  const formatPrice = (amount: number) => {
+    const converted = amount * rate;
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(converted);
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -104,9 +121,12 @@ export default function ProductPage() {
   const sizesByColor = (color: string) =>
     product.variants.filter((v) => v.color === color);
 
+  // ---------------- PRICE CALCULATION (BASE CURRENCY) ----------------
+  // We keep these variables in the Base Currency (e.g., USD)
+  // so that math (like discount %) is accurate.
   const basePrice = Number(product.price);
   const priceDiff = Number(selectedVariant?.priceDiff || 0);
-  const finalPrice = basePrice + priceDiff;
+  const finalPrice = basePrice + priceDiff; // This is still in Base Currency
   const comparePrice = Number(product.compareAtPrice);
 
   const discount =
@@ -120,7 +140,7 @@ export default function ProductPage() {
     product.reviews.reduce((a, r) => a + r.rating, 0) /
     (product.reviews.length || 1);
 
-  // Inside your ProductPage component
+  // ---------------- ADD TO CART (Unchanged) ----------------
   const handleAddToCart = async () => {
     if (!userData?.id) {
       toast.error("You are not login!");
@@ -131,6 +151,8 @@ export default function ProductPage() {
     if (!selectedVariant) return;
 
     try {
+      // NOTE: We are NOT sending 'finalPrice' or 'rate' here.
+      // We send the ID. The server looks up the ID and uses the Base Price in the DB.
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/cart/addToCart`,
         {
@@ -241,11 +263,13 @@ export default function ProductPage() {
 
           <div className="flex items-end gap-3 mb-4">
             <span className="text-3xl font-medium">
-              ${finalPrice.toLocaleString("en-IN")}
+              {/* DYNAMIC PRICE DISPLAY */}
+              {currencyCode} {formatPrice(finalPrice)}
             </span>
             {product.compareAtPrice && (
               <span className="line-through text-gray-400">
-                ${comparePrice.toLocaleString("en-IN")}
+                 {/* DYNAMIC COMPARE PRICE DISPLAY */}
+                 {currencyCode} {formatPrice(comparePrice)}
               </span>
             )}
           </div>

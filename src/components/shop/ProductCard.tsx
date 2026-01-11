@@ -9,6 +9,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { addItem } from "@/redux/cartSlice";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import { RootState } from "@/redux/store"; // Ensure correct import path
 
 interface Variant {
   id: string;
@@ -50,6 +51,8 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   } = product;
 
   const [showOverlay, setShowOverlay] = useState(false);
+  
+  // Stock Logic
   const parentStock = stock ?? stoke ?? 0;
   const totalStock =
     variants.length > 0
@@ -58,16 +61,39 @@ export const ProductCard = ({ product }: ProductCardProps) => {
 
   const dispatch = useDispatch();
   const router = useRouter();
+
+  // 1. Redux Selectors
   const userData = useSelector((state: any) => state.user);
   const cartItems: { id: string }[] = useSelector((state: any) => state.cart.items);
+  
+  // 2. Get Currency Data from Redux
+  const { data: currencyData } = useSelector((state: RootState) => state.currency);
 
-  const priceNum = Number(price);
-  const compareNum = compareAtPrice && Number(compareAtPrice) > 0 ? Number(compareAtPrice) : null;
+  // 3. Define Rate & Code Logic
+  // If currencyData exists, use it. Otherwise, default to USD (Rate 1)
+  const rate = currencyData?.rates || 1;
+  const currencyCode = currencyData?.currencyCode || "USD";
 
+  // 4. Calculate Prices
+  const basePrice = Number(price);
+  const baseCompare = compareAtPrice && Number(compareAtPrice) > 0 ? Number(compareAtPrice) : null;
+
+  const finalPrice = basePrice * rate;
+  const finalComparePrice = baseCompare ? baseCompare * rate : null;
+
+  // Calculate Discount % (Math is consistent regardless of currency)
   const discountPercent =
-    compareNum && compareNum > priceNum
-      ? Math.round(((compareNum - priceNum) / compareNum) * 100)
+    baseCompare && baseCompare > basePrice
+      ? Math.round(((baseCompare - basePrice) / baseCompare) * 100)
       : null;
+
+  // Helper: Format Number (e.g., 1,200.50)
+  const formatMoney = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  };
 
   const addToCart = async () => {
     if (totalStock <= 0) {
@@ -81,13 +107,11 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       return;
     }
 
-    // Variants redirect to product page
     if (variants.length > 0) {
       router.push(`/product/${slug || id}`);
       return;
     }
 
-    // Prevent duplicate
     const exists = cartItems.some((item) => item.id === id);
     if (exists) {
       toast.error("Item already in cart!");
@@ -105,7 +129,6 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       );
 
       if (res.status === 200 || res.status === 201) {
-        // Add item ID to Redux
         dispatch(addItem(id));
         toast.success("Added to cart successfully!", {
           style: { background: "#333", color: "#fff" },
@@ -184,16 +207,20 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             </h3>
           </Link>
 
-          <div className="flex items-center gap-2 mt-1">
+          {/* ----- PRICE SECTION START ----- */}
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
             <p className="font-serif text-[#581c1c] text-base md:text-lg font-medium">
-              ${priceNum.toLocaleString("en-US")}
+              {/* Render: CURRENCY_CODE PRICE (e.g., AUD 150.00 or USD 100.00) */}
+              {currencyCode} {formatMoney(finalPrice)}
             </p>
-            {compareNum  && compareNum > priceNum && (
+            
+            {finalComparePrice && finalComparePrice > finalPrice && (
               <p className="text-xs md:text-sm text-gray-400 line-through">
-                ${compareNum.toLocaleString("en-US")}
+                {currencyCode} {formatMoney(finalComparePrice)}
               </p>
             )}
           </div>
+          {/* ----- PRICE SECTION END ----- */}
 
           <p
             className={`text-[10px] md:text-xs mt-1 font-medium ${

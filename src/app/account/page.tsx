@@ -42,9 +42,27 @@ export default function ProfilePage() {
   const [payments, setPayments] = useState<any[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  
+  // 1. Redux Selectors
   const userData = useSelector((state: any) => state.user);
+  const { data: currencyData } = useSelector((state: any) => state.currency);
+
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const router = useRouter();
+
+  // 2. Currency Logic
+  const rate = currencyData?.rates || 1;
+  const currencyCode = currencyData?.currencyCode || "USD";
+
+  // Helper: Convert & Format Price
+  const formatPrice = (amount: any) => {
+    const num = Number(amount) || 0;
+    const converted = num * rate;
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(converted);
+  };
 
   async function fetchData() {
     try {
@@ -206,7 +224,8 @@ export default function ProfilePage() {
                             Total
                           </span>
                           <span className="font-medium text-gray-900">
-                            ${Number(order.total).toLocaleString()}
+                            {/* DYNAMIC PRICE */}
+                            {currencyCode} {formatPrice(order.total)}
                           </span>
                         </div>
                       </div>
@@ -335,7 +354,8 @@ export default function ProfilePage() {
                     <div>
                       <p className="font-medium">{pay.provider}</p>
                       <p className="text-sm text-muted-foreground">
-                        ${Number(pay.amount).toLocaleString()}
+                        {/* DYNAMIC PRICE */}
+                        {currencyCode} {formatPrice(pay.amount)}
                       </p>
                     </div>
                     <Badge
@@ -445,26 +465,27 @@ export default function ProfilePage() {
                   </p>
                   <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
                   <p className="text-sm text-gray-900 font-medium">
-                    ${Number(item.price).toLocaleString()}
+                    {/* DYNAMIC PRICE */}
+                    {currencyCode} {formatPrice(item.price)}
                   </p>
                 </div>
               </div>
             ))}
             <div className="flex justify-between mt-4 font-medium">
               <p>Subtotal:</p>
-              <p>${Number(selectedOrder?.subtotal).toLocaleString()}</p>
+              <p>{currencyCode} {formatPrice(selectedOrder?.subtotal)}</p>
             </div>
             <div className="flex justify-between font-medium">
               <p>Shipping:</p>
-              <p>${Number(selectedOrder?.shippingCost).toLocaleString()}</p>
+              <p>{currencyCode} {formatPrice(selectedOrder?.shippingCost)}</p>
             </div>
             <div className="flex justify-between font-medium">
               <p>Tax:</p>
-              <p>${Number(selectedOrder?.tax).toLocaleString()}</p>
+              <p>{currencyCode} {formatPrice(selectedOrder?.tax)}</p>
             </div>
             <div className="flex justify-between font-bold text-lg mt-2">
               <p>Total:</p>
-              <p>${Number(selectedOrder?.total).toLocaleString()}</p>
+              <p>{currencyCode} {formatPrice(selectedOrder?.total)}</p>
             </div>
           </div>
           <DialogFooter>

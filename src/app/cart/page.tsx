@@ -16,15 +16,14 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator"; // Added Separator import
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import { removeItem } from "@/redux/cartSlice";
 import toast from "react-hot-toast";
 
-const FREE_SHIPPING_THRESHOLD = 10000;
+const FREE_SHIPPING_THRESHOLD = 10000; // Base Currency (USD)
 const TAX_RATE = 0.18;
 
 type CartItem = {
@@ -43,19 +42,35 @@ type CartItem = {
 
 export default function CartPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [coupon, setCoupon] = useState("");
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [loading, setLoading] = useState(true);
   const dispatch = useDispatch();
 
   const userData = useSelector((state: any) => state.user);
+  
+  // 1. Get Currency Data from Redux
+  const { data: currencyData } = useSelector((state: any) => state.currency);
   const router = useRouter();
+
+  // 2. Define Rate & Code Logic
+  const rate = currencyData?.rates || 1;
+  const currencyCode = currencyData?.currencyCode || "USD";
+
+  // 3. Helper: Format Price
+  // We keep calculations in USD, but convert only for display
+  const formatPrice = (amount: number) => {
+    const converted = amount * rate;
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(converted);
+  };
 
   // ---------------- FETCH CART ----------------
   useEffect(() => {
     async function fetchCart() {
       try {
-        axios.defaults.withCredentials=true
+        axios.defaults.withCredentials = true;
         const res = await axios.get(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/cart/${userData.id}`
         );
@@ -90,20 +105,22 @@ export default function CartPage() {
       }
     }
 
-    if (userData?.id){
-      fetchCart()
-    }else{
-        toast.error("You are not login!")
-        router.push("/auth/login")
+    if (userData?.id) {
+      fetchCart();
+    } else {
+      toast.error("You are not login!");
+      router.push("/auth/login");
     }
   }, [userData?.id]);
 
-  // ---------------- CALCULATIONS ----------------
+  // ---------------- CALCULATIONS (Done in BASE Currency) ----------------
   const subtotal = cartItems.reduce(
     (acc, item) => acc + item.price * item.quantity,
     0
   );
-  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 250;
+  
+  // Logic remains in USD (10000 limit)
+  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 250; 
   const tax = Math.round(subtotal * TAX_RATE);
   const discount = 0;
   const total = subtotal + shipping + tax - discount;
@@ -119,15 +136,14 @@ export default function CartPage() {
     const item = cartItems.find((i) => i.id === id);
     if (!item) return;
 
-    // Call backend only if quantity changes
     try {
       if (change === 1 && item.quantity < item.stock) {
-        axios.defaults.withCredentials=true
+        axios.defaults.withCredentials = true;
         await axios.put(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/cart/increment/${id}`
         );
       } else if (change === -1 && item.quantity > 1) {
-        axios.defaults.withCredentials=true
+        axios.defaults.withCredentials = true;
         await axios.put(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/cart/decrement/${id}`
         );
@@ -135,7 +151,6 @@ export default function CartPage() {
         return;
       }
 
-      // Update frontend state
       setCartItems((prev) =>
         prev.map((i) =>
           i.id === id
@@ -150,7 +165,7 @@ export default function CartPage() {
 
   const removeItemCart = async (id: string) => {
     try {
-      axios.defaults.withCredentials=true
+      axios.defaults.withCredentials = true;
       await axios.delete(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/users/removecartItem/${id}`
       );
@@ -186,7 +201,7 @@ export default function CartPage() {
                 <Truck className="w-5 h-5 text-[#581c1c]" />
                 <span className="text-sm">
                   {amountNeeded > 0
-                    ? `Add $${amountNeeded.toLocaleString()} more for free shipping`
+                    ? `Add ${currencyCode} ${formatPrice(amountNeeded)} more for free shipping`
                     : "You unlocked FREE shipping 🎉"}
                 </span>
               </div>
@@ -221,7 +236,8 @@ export default function CartPage() {
                     </p>
 
                     <p className="text-[#581c1c] font-semibold mt-1">
-                      ${item.price.toLocaleString()}
+                      {/* DYNAMIC PRICE PER ITEM */}
+                      {currencyCode} {formatPrice(item.price)}
                     </p>
 
                     <div className="flex justify-between items-center mt-4">
@@ -244,7 +260,8 @@ export default function CartPage() {
                       </div>
 
                       <span className="font-semibold">
-                        ${(item.price * item.quantity).toLocaleString()}
+                         {/* DYNAMIC TOTAL PER ITEM */}
+                         {currencyCode} {formatPrice(item.price * item.quantity)}
                       </span>
                     </div>
                   </div>
@@ -263,7 +280,7 @@ export default function CartPage() {
               <div className="space-y-4 text-sm">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>${subtotal.toLocaleString()}</span>
+                  <span>{currencyCode} {formatPrice(subtotal)}</span>
                 </div>
 
                 <div className="flex justify-between">
@@ -272,21 +289,21 @@ export default function CartPage() {
                     {shipping === 0 ? (
                       <span className="text-green-600">FREE</span>
                     ) : (
-                      `$${shipping}`
+                      `${currencyCode} ${formatPrice(shipping)}`
                     )}
                   </span>
                 </div>
 
                 <div className="flex justify-between">
                   <span>Tax (18%)</span>
-                  <span>${tax.toLocaleString()}</span>
+                  <span>{currencyCode} {formatPrice(tax)}</span>
                 </div>
 
                 <Separator />
 
                 <div className="flex justify-between font-semibold">
                   <span>Total</span>
-                  <span>${total.toLocaleString()}</span>
+                  <span>{currencyCode} {formatPrice(total)}</span>
                 </div>
               </div>
 
@@ -316,21 +333,6 @@ export default function CartPage() {
                 </div>
               </div>
             </div>
-{/* 
-            <div className="bg-white p-6 rounded-xl border shadow-sm">
-              <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                <Gift className="w-4 h-4 text-[#581c1c]" />
-                Apply Coupon
-              </h3>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Enter code"
-                  value={coupon}
-                  onChange={(e) => setCoupon(e.target.value)}
-                />
-                <Button variant="outline">Apply</Button>
-              </div>
-            </div> */}
           </div>
         </div>
       </div>

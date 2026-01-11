@@ -20,6 +20,7 @@ import {
   Star,
   GalleryVertical,
   Flame,
+  DollarSign 
 } from "lucide-react";
 
 import { cn } from "@/lib/utils"; // Assuming you have a cn utility, or use template literals
@@ -62,7 +63,11 @@ const sidebarGroups = [
         label: "Featured Category",
         href: "/admin/marketing/featured-category",
       },
-      { icon: Flame, label: "Featured Banner", href: "/admin/marketing/featured-banner" },
+      {
+        icon: Flame,
+        label: "Featured Banner",
+        href: "/admin/marketing/featured-banner",
+      },
       { icon: Megaphone, label: "Announcements", href: "/admin/announcements" },
       {
         icon: MessageSquare,
@@ -74,15 +79,17 @@ const sidebarGroups = [
   },
   {
     label: "System",
-    items: [{ icon: Settings, label: "Settings", href: "/admin/settings" }],
+    items: [
+      { icon: Settings, label: "Settings", href: "/admin/settings" },
+      { icon: DollarSign , label: "Currency", href: "/admin/currency" },
+    ],
   },
 ];
 
 export function AdminSidebar() {
+  const router = useRouter();
 
-  const router=useRouter()
-
-    const logout = async () => {
+  const logout = async () => {
     axios.defaults.withCredentials = true;
     const response = await axios.post(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/auth/logout`
@@ -163,7 +170,7 @@ export function AdminSidebar() {
             </Avatar>
             <div className="grid gap-0.5">
               <span className="text-sm font-semibold text-slate-900">
-                Admin 
+                Admin
               </span>
               <span className="text-xs text-slate-500">admin@ssbnkart.com</span>
             </div>
@@ -171,7 +178,7 @@ export function AdminSidebar() {
         </div>
 
         <Button
-        onClick={logout}
+          onClick={logout}
           variant="outline"
           className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 border-red-100"
         >

@@ -6,6 +6,8 @@ import VerifyUser from "./UserVerify";
 import Navbar from "./Navbar";
 import { usePathname } from "next/navigation";
 import { Footer } from "./Footer";
+import CurrencyDialog from "./CurrencyDialog";
+import CurrencyAutoRefresher from "./getCurrency";
 
 export const WrapperLayout = ({ children }: { children: React.ReactNode }) => {
   const path = usePathname();
@@ -14,6 +16,8 @@ export const WrapperLayout = ({ children }: { children: React.ReactNode }) => {
     <div>
       <Provider store={store}>
         <VerifyUser />
+        <CurrencyDialog />
+        <CurrencyAutoRefresher />
         {!path.startsWith("/admin") && <Navbar />}
         {children}
         {!path.startsWith("/admin") && <Footer />}
